@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Login – Kota Room Finder</title><link rel="stylesheet" href="./krf.css"></head><body>
+<main class="wrap"><div class="card box"><h2 style="margin-top:0">Login</h2>
+<form id="lf" class="f" novalidate><label>Email<input name="email" type="email" autocomplete="email" required></label>
+<label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+<div class="err" id="err" role="alert"></div><button class="krf-btn fill" id="go" type="submit">Login</button>
+<button class="krf-btn" id="fp" type="button">Forgot password?</button>
+<p class="muted" style="text-align:center">Naya account? <a href="register.html" style="color:#0f766e;font-weight:700">Register karein</a></p></form></div></main>
+<script type="module">
+import {renderChrome,auth,A,getRole,home,safeNext,authMsg} from "./app.js";
+renderChrome();const f=lf,q=new URLSearchParams(location.search).get("next");
+const go2=async u=>{const r=await getRole(u);location.replace(safeNext(q,home(r)))};
+A.onAuthStateChanged(auth,u=>{if(u&&!f.dataset.busy)go2(u)});
+f.onsubmit=async e=>{e.preventDefault();err.textContent="";const em=f.email.value.trim(),pw=f.password.value;
+ if(!em||!pw){err.textContent="Email aur password dono bharein.";return}
+ go.disabled=true;go.textContent="Please wait…";f.dataset.busy=1;
+ try{const c=await A.signInWithEmailAndPassword(auth,em,pw);await go2(c.user)}catch(x){err.textContent=authMsg(x);go.disabled=false;go.textContent="Login";delete f.dataset.busy}};
+fp.onclick=async()=>{err.textContent="";const em=f.email.value.trim();if(!em){err.textContent="Pehle upar email likhein.";return}
+ try{await A.sendPasswordResetEmail(auth,em);err.className="ok";err.textContent="Password reset link email par bhej diya gaya hai."}catch(x){err.className="err";err.textContent=authMsg(x)}};
+</script></body></html>

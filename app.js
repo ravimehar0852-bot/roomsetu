@@ -157,3 +157,12 @@ export function renderChrome() {
   draw(auth.currentUser);
   _chromeUnsub = A.onAuthStateChanged(auth, draw);
 }
+
+// ---- small shared helpers ----
+export const safeNext = (n, d) => (/^[a-z0-9-]+\.html(\?[\w=&%.-]*)?$/i.test(n || "") ? "./" + n : d);
+export const authMsg = (e) => ({
+  "auth/invalid-credential": "Email ya password galat hai.", "auth/wrong-password": "Email ya password galat hai.",
+  "auth/user-not-found": "Is email ka account nahi mila.", "auth/invalid-email": "Email sahi format mein likhein.",
+  "auth/email-already-in-use": "Ye email pehle se registered hai. Login karein.", "auth/weak-password": "Password kam se kam 6 characters ka rakhein.",
+  "auth/too-many-requests": "Bahut attempts ho gaye. Thodi der baad try karein.", "auth/network-request-failed": "Internet check karein."
+}[e && e.code] || "Kuch galat ho gaya. Dobara try karein.");
