@@ -1,0 +1,33 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kota Room Finder – Find Your Perfect Room in Kota</title><meta name="description" content="Verified rooms, PGs, hostels and rental properties in Kota near coaching institutes."><meta name="theme-color" content="#0f766e">
+<link rel="stylesheet" href="./krf.css"></head><body>
+<section class="hero"><div class="wrap" style="padding:0">
+<h1>Find Your Perfect Room in Kota</h1>
+<p>Discover verified rooms, PGs, hostels, and rental properties near your coaching institute or preferred locality.</p>
+<form id="sf" class="form card" style="padding:12px;color:#1f2937">
+<select name="area"><option value="">Locality</option></select><select name="propertyType"><option value="">Property type</option></select>
+<select name="rent"><option value="">Monthly rent</option><option value="0-5000">Up to ₹5,000</option><option value="5000-10000">₹5,000 – ₹10,000</option><option value="10000-20000">₹10,000 – ₹20,000</option><option value="20000-">₹20,000+</option></select>
+<select name="suitableFor"><option value="">Suitable for</option><option value="boys">Boys</option><option value="girls">Girls</option><option value="family">Families</option><option value="anyone">Anyone</option></select>
+<button class="krf-btn fill" type="submit">Search</button></form>
+<div class="cta" style="margin-top:14px"><a class="krf-btn" style="background:#fff" href="rooms.html">Explore Rooms</a><a class="krf-btn" style="background:transparent;color:#fff;border-color:#fff" href="join.html">List Your Property</a></div></div></section>
+<main class="wrap">
+<h2>Popular Localities</h2><div class="chips" id="areas"></div>
+<h2>Property Categories</h2><div class="chips" id="types"></div>
+<h2>Featured Properties</h2><div class="grid" id="feat"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+<h2>How It Works</h2><div class="steps"><div><b>Search for a room</b><p class="muted">Pick locality, budget and type.</p></div><div><b>Compare properties</b><p class="muted">Check photos, rent and facilities.</p></div><div><b>Contact the owner</b><p class="muted">Send an enquiry in one tap.</p></div><div><b>Visit &amp; finalize</b><p class="muted">Arrange a visit and agree the rental terms.</p></div></div>
+<div class="card" style="margin-top:26px;padding:22px;text-align:center"><h2 style="margin-top:0">Own a room, PG or flat in Kota?</h2><p class="muted">List it for free and reach students and families looking right now.</p><a class="krf-btn fill" href="join.html">List Your Property</a></div>
+</main>
+<footer><p><b>Kota Room Finder</b> – Find Your Perfect Room in Kota</p><a href="about.html">About</a><a href="contact.html">Contact</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="rooms.html">Find Rooms</a></footer>
+<script type="module">
+import {renderChrome,esc} from "./app.js";
+import {AREAS,TYPES,authReady,fetchApproved,show} from "./rooms.js";
+renderChrome();
+const f=document.getElementById("sf");
+AREAS.forEach(a=>f.area.add(new Option(a,a)));TYPES.forEach(t=>f.propertyType.add(new Option(t,t)));
+areas.innerHTML=AREAS.map(a=>`<a class="chip" href="rooms.html?area=${encodeURIComponent(a)}">${esc(a)}</a>`).join("");
+types.innerHTML=TYPES.map(t=>`<a class="chip" href="rooms.html?type=${encodeURIComponent(t)}">${esc(t)}</a>`).join("");
+f.onsubmit=e=>{e.preventDefault();const p=new URLSearchParams();for(const k of["area","propertyType","suitableFor"])if(f[k].value)p.set(k==="propertyType"?"type":k,f[k].value);
+ if(f.rent.value){const[a,b]=f.rent.value.split("-");if(a)p.set("min",a);if(b)p.set("max",b)}location.href="rooms.html?"+p};
+(async()=>{await authReady();try{show(feat,await fetchApproved({max:6}),"Abhi koi approved property nahi hai. Jaldi hi listings aayengi.")}
+catch(e){console.error(e);feat.innerHTML='<div class="empty" style="grid-column:1/-1"><b>Properties load nahi ho payi</b>Internet check karke refresh karein.</div>'}})();
+</script></body></html>
