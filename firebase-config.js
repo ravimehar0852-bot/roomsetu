@@ -1,10 +1,10 @@
-// Paste YOUR NEW Firebase project's web config here
-// (Firebase Console -> Project settings -> General -> Your apps -> Web app -> SDK setup and configuration -> Config)
+// Kota Room Finder – Firebase web config (roomsetu-web project)
 export const firebaseConfig = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID"
+  apiKey: "AIzaSyAop7LSR57kz_bQHJm2buGggCtFLUFoIPU",
+  authDomain: "roomsetu-web.firebaseapp.com",
+  projectId: "roomsetu-web",
+  storageBucket: "roomsetu-web.firebasestorage.app",
+  messagingSenderId: "182720077793",
+  appId: "1:182720077793:web:9f6905abcc4085c6db7ca0",
+  measurementId: "G-TVBHW4VR1L"
 };
