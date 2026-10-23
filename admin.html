@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Admin – Kota Room Finder</title><link rel="stylesheet" href="./krf.css"></head><body>
+<main class="wrap"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:8px 0">Admin Panel</h2><button class="krf-btn" id="rf">↻ Refresh</button></div>
+<div class="err" id="err"></div><div class="stats" id="st"></div>
+<div class="form card" style="padding:12px;margin-bottom:14px"><select id="fs"><option value="">All status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select><input id="q" placeholder="Search title, area, owner…"></div>
+<div id="ls"><div class="skel"></div></div></main>
+<script type="module">
+import {renderChrome,auth,db,A,F,getRole,esc} from "./app.js";
+import {inr,toast} from "./rooms.js";
+renderChrome();let L=[];const d=x=>x&&x.toDate?x.toDate().toLocaleString("en-IN"):"—";
+A.onAuthStateChanged(auth,async u=>{if(!u)return location.replace("login.html?next=admin.html");
+ if(await getRole(u)!=="admin"){ls.innerHTML='<div class="empty"><b>Access denied</b>Ye page sirf administrator ke liye hai.</div>';return}load()});
+async function load(){err.textContent="";ls.innerHTML='<div class="skel"></div>';
+ try{L=(await F.getDocs(F.collection(db,"listings"))).docs.map(x=>({id:x.id,...x.data()}));L.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));draw()}
+ catch(e){console.error(e);ls.innerHTML="";err.textContent="Listings load nahi hui. Admin role aur rules check karein."}}
+function draw(){const c=k=>L.filter(x=>x.status===k).length,s=fs.value,t=q.value.trim().toLowerCase();
+ st.innerHTML=[["Total",L.length],["Pending",c("pending")],["Approved",c("approved")],["Rejected",c("rejected")]].map(([a,b])=>`<div><b>${b}</b>${a}</div>`).join("");
+ const R=L.filter(x=>(!s||x.status===s)&&(!t||[x.title,x.area,x.ownerName,x.ownerEmail].join(" ").toLowerCase().includes(t)));
+ ls.innerHTML=R.length?R.map(l=>`<div class="card item">${l.photos&&l.photos[0]?`<a href="${esc(l.photos[0])}" target="_blank" rel="noopener"><img src="${esc(l.photos[0])}" alt=""></a>`:'<div class="ph"></div>'}<div class="info"><b>${esc(l.title)}</b> <span class="st ${esc(l.status)}">${esc(l.status)}</span>
+ <div class="muted">${esc(l.propertyType||"")} • ${esc(l.area||"")} • ${inr(l.monthlyRent)}/mo • Deposit ${inr(l.securityDeposit)}</div>
+ <div class="muted">Owner: ${esc(l.ownerName||"—")} • ${esc(l.ownerEmail||"")} • ${esc(l.ownerPhone||"")}</div>
+ <div class="muted">Submitted ${d(l.createdAt)} • Reviewed ${d(l.reviewedAt)} • ${(l.photos||[]).length} photo(s)</div>
+ <details><summary class="muted">Details</summary><p style="white-space:pre-wrap">${esc(l.description||"")}</p><div class="muted">Facilities: ${esc((l.facilities||[]).join(", ")||"—")}<br>Landmark: ${esc(l.landmark||"—")} • For: ${esc(l.suitableForLabel||"")} • ${esc(l.furnishingLabel||"")}</div></details>
+ <div class="acts">${l.status!=="approved"?`<button class="krf-btn fill" data-a="${l.id}" data-v="approved">${l.status==="rejected"?"Re-approve":"Approve"}</button>`:""}${l.status!=="rejected"?`<button class="krf-btn" data-a="${l.id}" data-v="rejected">Reject</button>`:""}</div></div></div>`).join(""):'<div class="empty"><b>Koi listing nahi mili</b></div>'}
+fs.onchange=q.oninput=draw;rf.onclick=load;
+ls.onclick=async e=>{const b=e.target.closest("[data-a]");if(!b)return;b.disabled=true;
+ try{await F.updateDoc(F.doc(db,"listings",b.dataset.a),{status:b.dataset.v,reviewedAt:F.serverTimestamp()});toast(b.dataset.v==="approved"?"Approved":"Rejected");load()}
+ catch(x){console.error(x);toast("Update fail hua. Rules/role check karein.");b.disabled=false}};
+</script></body></html>
