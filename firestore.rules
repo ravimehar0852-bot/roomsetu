@@ -35,11 +35,10 @@ service cloud.firestore {
         && request.resource.data.title is string && request.resource.data.title.size() > 2
         && request.resource.data.monthlyRent is number && request.resource.data.monthlyRent > 0
         && request.resource.data.securityDeposit is number && request.resource.data.securityDeposit >= 0
-        && request.resource.data.ownerPhone is string
         && request.resource.data.description is string
         && request.resource.data.photos is list && request.resource.data.photos.size() == 0
         && request.resource.data.keys().hasOnly([
-          "ownerUid","ownerName","ownerEmail","ownerPhone","title","propertyType","propertyTypeLabel",
+          "ownerUid","ownerName","ownerEmail","title","propertyType","propertyTypeLabel",
           "roomTypeLabel","suitableFor","suitableForLabel","monthlyRent","securityDeposit","availableFrom",
           "furnishing","furnishingLabel","country","state","city","area","landmark","facilities",
           "description","latitude","longitude","locationAccuracy","photos","status","availability","createdAt"]);
@@ -61,7 +60,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           "title","propertyType","propertyTypeLabel","roomTypeLabel","suitableFor","suitableForLabel",
           "monthlyRent","securityDeposit","availableFrom","furnishing","furnishingLabel","area","landmark",
-          "facilities","description","latitude","longitude","locationAccuracy","ownerPhone","ownerName","status"])
+          "facilities","description","latitude","longitude","locationAccuracy","ownerName","status"])
         && request.resource.data.monthlyRent is number && request.resource.data.monthlyRent > 0;
 
       // Admin review: approve / reject / re-approve
@@ -100,9 +99,39 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ---------- chats (id = listingId_customerUid) ----------
+    match /chats/{chatId} {
+      allow get: if signedIn() && (resource == null || request.auth.uid in resource.data.participants || isAdmin());
+      allow list: if signedIn() && (request.auth.uid in resource.data.participants || isAdmin());
+      allow create: if signedIn()
+        && chatId == request.resource.data.listingId + "_" + request.auth.uid
+        && request.resource.data.customerUid == request.auth.uid
+        && request.resource.data.ownerUid != request.auth.uid
+        && request.resource.data.participants == [request.resource.data.ownerUid, request.auth.uid]
+        && exists(/databases/$(database)/documents/listings/$(request.resource.data.listingId))
+        && get(/databases/$(database)/documents/listings/$(request.resource.data.listingId)).data.ownerUid == request.resource.data.ownerUid
+        && get(/databases/$(database)/documents/listings/$(request.resource.data.listingId)).data.status == "approved"
+        && request.resource.data.keys().hasOnly(["listingId","listingTitle","ownerUid","ownerName","customerUid","customerName","participants","lastMessage","lastMessageAt","createdAt"]);
+      allow update: if signedIn() && request.auth.uid in resource.data.participants
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["lastMessage","lastMessageAt"])
+        && request.resource.data.lastMessage is string && request.resource.data.lastMessage.size() <= 200;
+      allow delete: if isAdmin();
+
+      match /messages/{mid} {
+        allow read: if signedIn() && (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants || isAdmin());
+        allow create: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
+          && request.resource.data.senderUid == request.auth.uid
+          && request.resource.data.text is string && request.resource.data.text.size() >= 1 && request.resource.data.text.size() <= 1000
+          && request.resource.data.keys().hasOnly(["senderUid","text","createdAt"]);
+        allow delete: if isAdmin();
+      }
+    }
+
     // ---------- favorites (doc id = uid_listingId) ----------
     match /favorites/{favId} {
-      allow get, list, delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow get, delete: if signedIn() && favId.matches(request.auth.uid + "_.*");
+      allow list: if signedIn() && resource.data.uid == request.auth.uid;
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.listingId is string
