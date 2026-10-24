@@ -4,17 +4,9 @@
 <div class="err" id="gate"></div>
 <form id="jf" class="f" novalidate>
 <label>Title<input name="title" maxlength="100" placeholder="Jaise: Furnished single room near Allen, Talwandi" required></label>
-<div class="two"><label>Locality<select name="area" required><option value="">Chunein</option></select></label><label>Property type<select name="ptype" required><option value="">Chunein</option></select></label></div>
+<div class="two"><label>Locality / Area<input name="area" list="al" maxlength="60" placeholder="Jaise: Keshavpura" required><datalist id="al"></datalist></label><label>Property type<select name="ptype" required><option value="">Chunein</option></select></label></div>
 <label>Landmark<input name="landmark" maxlength="100" placeholder="Jaise: Allen Career Institute ke paas"></label>
 <div class="two"><label>Monthly rent (₹)<input name="rent" type="number" min="1" inputmode="numeric" required></label><label>Security deposit (₹)<input name="deposit" type="number" min="0" inputmode="numeric" required></label></div>
- <label>
-  Electricity Bill
-  <select name="electricityBill" required>
-    <option value="">Choose electricity bill option</option>
-    <option value="included">Included in rent</option>
-    <option value="separate">Separate electricity bill</option>
-  </select>
- </label>
 <div class="two"><label>Suitable for<select name="suit" required><option value="">Chunein</option><option value="boys">Boys</option><option value="girls">Girls</option><option value="family">Families</option><option value="anyone">Anyone</option></select></label>
 <label>Furnishing<select name="furn" required><option value="">Chunein</option><option value="furnished">Furnished</option><option value="semi-furnished">Semi-furnished</option><option value="unfurnished">Unfurnished</option></select></label></div>
 <div class="two"><label>Available from<input name="avail" type="date" required></label></div>
@@ -27,7 +19,7 @@
 import {renderChrome,auth,db,storage,A,F,S,getRole,esc} from "./app.js";
 import {AREAS,TYPES} from "./rooms.js";
 renderChrome();const f=jf,FAC=["WiFi","AC","Cooler","Attached Bathroom","Meals","Laundry","Power Backup","Parking","Water Purifier","CCTV","Study Table","Geyser"];
-AREAS.forEach(a=>f.area.add(new Option(a,a)));TYPES.forEach(t=>f.ptype.add(new Option(t,t)));
+AREAS.concat(["Keshavpura","Rangbari","Gumanpura","Borkhera","Aerodrome Circle","Nayapura"]).forEach(a=>al.appendChild(new Option(a)));TYPES.forEach(t=>f.ptype.add(new Option(t,t)));
 fac.innerHTML=FAC.map(x=>`<label><input type="checkbox" value="${esc(x)}"> ${esc(x)}</label>`).join("");
 f.avail.min=new Date().toISOString().slice(0,10);
 const OK=["image/jpeg","image/png","image/webp"];let user=null;
@@ -46,14 +38,12 @@ if(!v("avail"))return err.textContent="Available-from date chunein.";
  go.disabled=true;go.textContent="Submitting…";bar.hidden=false;
  const ref=F.doc(F.collection(db,"listings")),sl=f.suit.selectedOptions[0].text,fl=f.furn.selectedOptions[0].text;
  try{await F.setDoc(ref,{ownerUid:user.uid,ownerName:user.displayName||"",ownerEmail:user.email||"",title:v("title"),propertyType:v("ptype"),roomTypeLabel:v("ptype"),
-  suitableFor:v("suit"),suitableForLabel:sl,monthlyRent: rent,
-electricityBill: f.electricityBill.value,
-securityDeposit: dep,,availableFrom:v("avail"),furnishing:v("furn"),furnishingLabel:fl,country:"India",state:"Rajasthan",city:"Kota",
-  area:v("area"),landmark:v("landmark"),facilities:[...fac.querySelectorAll("input:checked")].map(c=>c.value),description:v("desc"),photos:[],status:"approved",expiresAt:F.Timestamp.fromMillis(Date.now()+30*864e5),availability:"available",createdAt:F.serverTimestamp()})}
+  suitableFor:v("suit"),suitableForLabel:sl,monthlyRent:rent,securityDeposit:dep,availableFrom:v("avail"),furnishing:v("furn"),furnishingLabel:fl,country:"India",state:"Rajasthan",city:"Kota",
+  area:v("area").replace(/\b\w/g,c=>c.toUpperCase()),landmark:v("landmark"),facilities:[...fac.querySelectorAll("input:checked")].map(c=>c.value),description:v("desc"),photos:[],status:"approved",expiresAt:F.Timestamp.fromMillis(Date.now()+30*864e5),availability:"available",createdAt:F.serverTimestamp()})}
  catch(x){console.error(x);err.textContent="Listing save nahi ho payi. Dobara try karein.";go.disabled=false;go.textContent="Publish listing";bar.hidden=true;return}
  try{const urls=[];for(let i=0;i<files.length;i++){const x=files[i],ext=x.type.split("/")[1],r=S.ref(storage,`listings/${user.uid}/${ref.id}/${Date.now()}_${i}.${ext}`);
    await new Promise((ok,no)=>{const t=S.uploadBytesResumable(r,x,{contentType:x.type});t.on("state_changed",s=>bi.style.width=((i+s.bytesTransferred/s.totalBytes)/files.length*100)+"%",no,ok)});urls.push(await S.getDownloadURL(r))}
   await F.updateDoc(ref,{photos:urls});bi.style.width="100%";
   jf.innerHTML='<p class="ok">✓ Property live ho gayi! 30 din tak home feed mein dikhegi.</p><a class="krf-btn fill" href="owner-dashboard.html">Dashboard</a>'}
- catch(x){console.error(x);err.textContent="Listing save ho gayi par photos upload nahi hui. Internet check karke owner dashboard se photos add karein.";go.disabled=false;go.textContent="Publish listing"}};
+ catch(x){console.error(x);err.textContent="Listing save ho gayi par photos upload nahi hui ["+(x.code||x.message||"error")+"]. Owner dashboard se + Photos se dobara add karein.";go.disabled=false;go.textContent="Publish listing"}};
 </script></body></html>
