@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Find Rooms in Kota – Kota Room Finder</title><meta name="theme-color" content="#0f766e"><link rel="stylesheet" href="./krf.css"></head><body>
+<main class="wrap"><h2 id="ttl" style="margin-top:8px">Find Rooms in Kota</h2>
+<form id="ff" class="form card" style="padding:12px;margin-bottom:14px">
+<select name="area"><option value="">All localities</option></select><select name="propertyType"><option value="">All types</option></select>
+<select name="suitableFor"><option value="">Suitable for</option><option value="boys">Boys</option><option value="girls">Girls</option><option value="family">Families</option><option value="anyone">Anyone</option></select>
+<select name="furnishing"><option value="">Furnishing</option><option value="furnished">Furnished</option><option value="semi-furnished">Semi-furnished</option><option value="unfurnished">Unfurnished</option></select>
+<input name="min" type="number" min="0" inputmode="numeric" placeholder="Min rent ₹"><input name="max" type="number" min="0" inputmode="numeric" placeholder="Max rent ₹">
+<select name="sort"><option value="">Sort by</option><option value="low">Rent: low to high</option><option value="high">Rent: high to low</option></select>
+<button class="krf-btn fill" type="submit">Apply</button><button class="krf-btn" type="button" id="clr">Clear</button></form>
+<div id="cnt" class="muted" style="margin-bottom:8px"></div><div class="grid" id="list"><div class="skel"></div><div class="skel"></div></div></main>
+<script type="module">
+import {renderChrome,auth,db,F} from "./app.js";
+import {AREAS,TYPES,authReady,fetchApproved,show,card,bindFav,toast} from "./rooms.js";
+renderChrome();const f=document.getElementById("ff"),q=new URLSearchParams(location.search);
+AREAS.forEach(a=>f.area.add(new Option(a,a)));TYPES.forEach(t=>f.propertyType.add(new Option(t,t)));
+f.area.value=q.get("area")||"";f.propertyType.value=q.get("type")||"";f.suitableFor.value=q.get("suitableFor")||"";f.min.value=q.get("min")||"";f.max.value=q.get("max")||"";
+async function run(){list.innerHTML='<div class="skel"></div><div class="skel"></div>';
+ try{const r=await fetchApproved({area:f.area.value,propertyType:f.propertyType.value,suitableFor:f.suitableFor.value,furnishing:f.furnishing.value,min:+f.min.value||0,maxRent:+f.max.value||0,sort:f.sort.value});
+ cnt.textContent=r.length+" propert"+(r.length===1?"y":"ies")+" found";show(list,r)}
+ catch(e){console.error(e);cnt.textContent="";list.innerHTML='<div class="empty" style="grid-column:1/-1"><b>Listings load nahi hui</b>Thodi der baad dobara try karein.</div>'}}
+async function saved(user){ttl.textContent="Saved Rooms";f.style.display="none";
+ if(!user){list.innerHTML='<div class="empty" style="grid-column:1/-1"><b>Login zaroori hai</b><a class="krf-btn fill" href="login.html?next=rooms.html%3Fsaved%3D1">Login</a></div>';return}
+ try{const s=await F.getDocs(F.query(F.collection(db,"favorites"),F.where("uid","==",user.uid)));
+ const L=(await Promise.all(s.docs.map(d=>F.getDoc(F.doc(db,"listings",d.data().listingId)).catch(()=>null)))).filter(x=>x&&x.exists()).map(x=>({id:x.id,...x.data()}));
+ show(list,L,"Kisi property par ♡ Save dabayein.")}catch(e){list.innerHTML='<div class="empty" style="grid-column:1/-1"><b>Saved rooms load nahi hue</b></div>'}}
+f.onsubmit=e=>{e.preventDefault();run()};clr.onclick=()=>{f.reset();run()};
+authReady().then(u=>q.get("saved")?saved(u):run());
+</script></body></html>

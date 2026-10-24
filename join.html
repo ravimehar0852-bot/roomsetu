@@ -1,0 +1,49 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>List Your Property – Kota Room Finder</title><link rel="stylesheet" href="./krf.css"></head><body>
+<main class="wrap"><div class="card box wide"><h2 style="margin-top:0">List Your Property</h2>
+<p class="muted">Aapki listing turant live hogi (30 din ke liye). Admin kabhi bhi ise badal ya hata sakta hai. Photos mein Aadhaar ya personal documents na daalein. Customers aapse app ke chat mein baat karenge, aapka number public nahi hoga.</p>
+<div class="err" id="gate"></div>
+<form id="jf" class="f" novalidate>
+<label>Title<input name="title" maxlength="100" placeholder="Jaise: Furnished single room near Allen, Talwandi" required></label>
+<div class="two"><label>Locality<select name="area" required><option value="">Chunein</option></select></label><label>Property type<select name="ptype" required><option value="">Chunein</option></select></label></div>
+<label>Landmark<input name="landmark" maxlength="100" placeholder="Jaise: Allen Career Institute ke paas"></label>
+<div class="two"><label>Monthly rent (₹)<input name="rent" type="number" min="1" inputmode="numeric" required></label><label>Security deposit (₹)<input name="deposit" type="number" min="0" inputmode="numeric" required></label></div>
+<div class="two"><label>Suitable for<select name="suit" required><option value="">Chunein</option><option value="boys">Boys</option><option value="girls">Girls</option><option value="family">Families</option><option value="anyone">Anyone</option></select></label>
+<label>Furnishing<select name="furn" required><option value="">Chunein</option><option value="furnished">Furnished</option><option value="semi-furnished">Semi-furnished</option><option value="unfurnished">Unfurnished</option></select></label></div>
+<div class="two"><label>Available from<input name="avail" type="date" required></label></div>
+<label>Facilities<span class="checks" id="fac"></span></label>
+<label>Description<textarea name="desc" maxlength="1500" required></textarea></label>
+<label>Photos (1–8, JPG/PNG/WebP, max 5 MB each)<input name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple></label>
+<div id="pv" class="thumbs"></div><div class="bar" id="bar" hidden><i id="bi"></i></div>
+<div class="err" id="err" role="alert"></div><button class="krf-btn fill" id="go" type="submit">Publish listing</button></form></div></main>
+<script type="module">
+import {renderChrome,auth,db,storage,A,F,S,getRole,esc} from "./app.js";
+import {AREAS,TYPES} from "./rooms.js";
+renderChrome();const f=jf,FAC=["WiFi","AC","Cooler","Attached Bathroom","Meals","Laundry","Power Backup","Parking","Water Purifier","CCTV","Study Table","Geyser"];
+AREAS.forEach(a=>f.area.add(new Option(a,a)));TYPES.forEach(t=>f.ptype.add(new Option(t,t)));
+fac.innerHTML=FAC.map(x=>`<label><input type="checkbox" value="${esc(x)}"> ${esc(x)}</label>`).join("");
+f.avail.min=new Date().toISOString().slice(0,10);
+const OK=["image/jpeg","image/png","image/webp"];let user=null;
+f.photos.onchange=()=>{pv.innerHTML="";[...f.photos.files].slice(0,8).forEach(x=>{const i=new Image();i.src=URL.createObjectURL(x);pv.appendChild(i)})};
+A.onAuthStateChanged(auth,async u=>{if(!u){location.replace("login.html?next=join.html");return}user=u;
+ if(await getRole(u)!=="owner"){gate.innerHTML='Property list karne ke liye Property Owner account chahiye. <a href="register.html" style="color:#0f766e;font-weight:700">Owner account banayein</a>';[...f.elements].forEach(e=>e.disabled=true)}});
+f.onsubmit=async e=>{e.preventDefault();err.textContent="";if(!user)return;
+ const v=n=>f[n].value.trim(),files=[...f.photos.files];
+ if(v("title").length<5)return err.textContent="Title kam se kam 5 characters ka likhein.";
+ if(!v("area")||!v("ptype")||!v("suit")||!v("furn"))return err.textContent="Saare dropdown chunein.";
+ const rent=+v("rent"),dep=+v("deposit");if(!(rent>0))return err.textContent="Sahi monthly rent likhein.";if(!(dep>=0)||v("deposit")==="")return err.textContent="Security deposit likhein (0 bhi chalega).";
+if(!v("avail"))return err.textContent="Available-from date chunein.";
+ if(v("desc").length<10)return err.textContent="Description thoda detail mein likhein.";
+ if(!files.length||files.length>8)return err.textContent="1 se 8 photos chunein.";
+ for(const x of files){if(!OK.includes(x.type))return err.textContent=`"${x.name}" JPG, PNG ya WebP hona chahiye.`;if(x.size>=5*1024*1024)return err.textContent=`"${x.name}" 5 MB se chhoti honi chahiye.`}
+ go.disabled=true;go.textContent="Submitting…";bar.hidden=false;
+ const ref=F.doc(F.collection(db,"listings")),sl=f.suit.selectedOptions[0].text,fl=f.furn.selectedOptions[0].text;
+ try{await F.setDoc(ref,{ownerUid:user.uid,ownerName:user.displayName||"",ownerEmail:user.email||"",title:v("title"),propertyType:v("ptype"),roomTypeLabel:v("ptype"),
+  suitableFor:v("suit"),suitableForLabel:sl,monthlyRent:rent,securityDeposit:dep,availableFrom:v("avail"),furnishing:v("furn"),furnishingLabel:fl,country:"India",state:"Rajasthan",city:"Kota",
+  area:v("area"),landmark:v("landmark"),facilities:[...fac.querySelectorAll("input:checked")].map(c=>c.value),description:v("desc"),photos:[],status:"approved",expiresAt:F.Timestamp.fromMillis(Date.now()+30*864e5),availability:"available",createdAt:F.serverTimestamp()})}
+ catch(x){console.error(x);err.textContent="Listing save nahi ho payi. Dobara try karein.";go.disabled=false;go.textContent="Publish listing";bar.hidden=true;return}
+ try{const urls=[];for(let i=0;i<files.length;i++){const x=files[i],ext=x.type.split("/")[1],r=S.ref(storage,`listings/${user.uid}/${ref.id}/${Date.now()}_${i}.${ext}`);
+   await new Promise((ok,no)=>{const t=S.uploadBytesResumable(r,x,{contentType:x.type});t.on("state_changed",s=>bi.style.width=((i+s.bytesTransferred/s.totalBytes)/files.length*100)+"%",no,ok)});urls.push(await S.getDownloadURL(r))}
+  await F.updateDoc(ref,{photos:urls});bi.style.width="100%";
+  jf.innerHTML='<p class="ok">✓ Property live ho gayi! 30 din tak home feed mein dikhegi.</p><a class="krf-btn fill" href="owner-dashboard.html">Dashboard</a>'}
+ catch(x){console.error(x);err.textContent="Listing save ho gayi par photos upload nahi hui. Internet check karke owner dashboard se photos add karein.";go.disabled=false;go.textContent="Publish listing"}};
+</script></body></html>
