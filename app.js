@@ -72,11 +72,11 @@ const ICON = {
 };
 const here = () => (location.pathname.split("/").pop() || "index.html").toLowerCase();
 function build(user) {
-  const p = here(), act = (n) => (n.includes(p) ? "active" : ""), saved = location.search.includes("saved=1");
+  const p = here(), act = (n) => (n.includes(p) ? "active" : ""), saved = location.search.includes("saved=1"), srch = location.search.includes("search=1");
   return `<header id="krfHeader"><div class="krf-bar"><a class="krf-brand" href="./index.html"><span class="krf-logo">${ICON.home}</span><span>RoomSetu</span></a>${isAdminEmail(user) ? '<button class="krf-btn" id="krfOut" type="button" style="position:absolute;right:12px;min-height:38px;padding:0 14px">Logout</button>' : ""}</div></header>
 <nav id="krfBottom" aria-label="App navigation">
-  <a href="./index.html" class="${act(["index.html", ""])}">${ICON.home}<span>Home</span></a>
-  <a href="./rooms.html" class="${saved ? "" : act(["rooms.html", "room-details.html"])}">${ICON.search}<span>Search</span></a>
+  <a href="./index.html" class="${srch ? "" : act(["index.html", ""])}">${ICON.home}<span>Home</span></a>
+  <a href="./index.html?search=1" class="${srch ? "active" : ""}">${ICON.search}<span>Search</span></a>
   <a href="./rooms.html?saved=1" class="${saved ? "active" : ""}">${ICON.saved}<span>Saved</span></a>
   <a href="${user ? "./chat.html" : "./login.html?next=chat.html"}" class="${act(["chat.html"])}">${ICON.enq}<span>Chats</span></a>
   <a href="${user ? "./profile.html" : "./login.html"}" class="${act(["profile.html","login.html","register.html","owner-dashboard.html","customer-dashboard.html","admin.html","about.html","contact.html","privacy.html","terms.html"])}">${ICON.user}<span>Profile</span></a>
