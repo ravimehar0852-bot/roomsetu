@@ -10,7 +10,16 @@ select.chip{font-family:inherit;font-size:14px}.chip.on{background:#0f766e;color
 </div>
 <script type="module">
 import {renderChrome,esc} from "./app.js";
-import {authReady,fetchApproved,inr,bindFav,isFav,toast,TYPES} from "./rooms.js";
+import {
+  authReady,
+  fetchApproved,
+  bindFav,
+  isFav,
+  toast,
+  TYPES
+} from "./rooms.js";
+
+import { inr } from "./app.js";
 renderChrome();let ALL=[],list=[],n=0,user=null,type="";const STEP=5,norm=s=>String(s||"").toLowerCase();
 const CH=[["","All"],["Single Room","Single"],["Double Sharing","Double"]],rest=TYPES.filter(t=>!CH.some(c=>c[0]===t));
 chips.innerHTML=CH.map(([v,t])=>`<button class="chip${v===""?" on":""}" data-t="${esc(v)}">${t}</button>`).join("")+`<select class="chip" id="mt"><option value="">More ▾</option>${rest.map(t=>`<option>${esc(t)}</option>`).join("")}</select>`;
