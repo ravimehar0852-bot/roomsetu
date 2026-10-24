@@ -11,7 +11,7 @@ A.onAuthStateChanged(auth,async u=>{if(!u)return location.replace("login.html?ne
  if(await getRole(u)!=="admin"){ls.innerHTML='<div class="empty"><b>Access denied</b>Ye page sirf administrator ke liye hai.</div>';return}load()});
 async function load(){err.textContent="";ls.innerHTML='<div class="skel"></div>';
  try{L=(await F.getDocs(F.collection(db,"listings"))).docs.map(x=>({id:x.id,...x.data()}));L.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));draw()}
- catch(e){console.error(e);ls.innerHTML="";err.textContent="Listings load nahi hui. Admin role aur rules check karein."}}
+ catch(e){console.error(e);ls.innerHTML="";err.textContent="Listings load nahi hui ["+(e.code||e.message)+"]. "+(e.code==="permission-denied"?"Rules ya admin role check karein.":"Is code ka screenshot bhejein.")}}
 function draw(){const c=k=>L.filter(x=>x.status===k).length,s=fs.value,t=q.value.trim().toLowerCase();
  st.innerHTML=[["Total",L.length],["Pending",c("pending")],["Approved",c("approved")],["Rejected",c("rejected")]].map(([a,b])=>`<div><b>${b}</b>${a}</div>`).join("");
  const R=L.filter(x=>(!s||x.status===s)&&(!t||[x.title,x.area,x.ownerName,x.ownerEmail].join(" ").toLowerCase().includes(t)));
