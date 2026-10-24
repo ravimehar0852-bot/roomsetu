@@ -46,7 +46,9 @@ if(!v("avail"))return err.textContent="Available-from date chunein.";
  go.disabled=true;go.textContent="Submitting…";bar.hidden=false;
  const ref=F.doc(F.collection(db,"listings")),sl=f.suit.selectedOptions[0].text,fl=f.furn.selectedOptions[0].text;
  try{await F.setDoc(ref,{ownerUid:user.uid,ownerName:user.displayName||"",ownerEmail:user.email||"",title:v("title"),propertyType:v("ptype"),roomTypeLabel:v("ptype"),
-  suitableFor:v("suit"),suitableForLabel:sl,monthlyRent:rent,securityDeposit:dep,availableFrom:v("avail"),furnishing:v("furn"),furnishingLabel:fl,country:"India",state:"Rajasthan",city:"Kota",
+  suitableFor:v("suit"),suitableForLabel:sl,monthlyRent: rent,
+electricityBill: f.electricityBill.value,
+securityDeposit: dep,,availableFrom:v("avail"),furnishing:v("furn"),furnishingLabel:fl,country:"India",state:"Rajasthan",city:"Kota",
   area:v("area"),landmark:v("landmark"),facilities:[...fac.querySelectorAll("input:checked")].map(c=>c.value),description:v("desc"),photos:[],status:"approved",expiresAt:F.Timestamp.fromMillis(Date.now()+30*864e5),availability:"available",createdAt:F.serverTimestamp()})}
  catch(x){console.error(x);err.textContent="Listing save nahi ho payi. Dobara try karein.";go.disabled=false;go.textContent="Publish listing";bar.hidden=true;return}
  try{const urls=[];for(let i=0;i<files.length;i++){const x=files[i],ext=x.type.split("/")[1],r=S.ref(storage,`listings/${user.uid}/${ref.id}/${Date.now()}_${i}.${ext}`);
