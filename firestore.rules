@@ -9,7 +9,7 @@ service cloud.firestore {
     function hasUserDoc() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
     // Admin = ONE reserved Gmail only (write it in lowercase; same as ADMIN_EMAIL in site.js)
     function isAdmin() {
-      return signedIn() && request.auth.token.email == "your_admin@gmail.com";
+      return signedIn() && request.auth.token.email == "ravimehar0852@gmail.com";
     }
     // "worker" kept as an accepted legacy alias for owner (harmless on a fresh project)
     function isOwnerRole() { return hasUserDoc() && userDoc().role in ["owner", "worker"]; }
