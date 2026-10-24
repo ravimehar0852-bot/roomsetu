@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Profile – RoomSetu</title><link rel="stylesheet" href="./krf.css">
+<style>.av{width:96px;height:96px;border-radius:50%;margin:0 auto;background:#0f766e;color:#fff;display:grid;place-items:center;font-size:40px;font-weight:800;overflow:hidden}.av img{width:100%;height:100%;object-fit:cover}
+.mi{display:flex;justify-content:space-between;padding:15px 14px;text-decoration:none;font-weight:600;border-bottom:1px solid #f0ebe0}.mi:last-child{border:0}.mi:after{content:"›";color:#9ca3af}</style></head><body>
+<main class="wrap" style="max-width:520px" id="root"><div class="skel"></div></main>
+<script type="module">
+import {renderChrome,auth,db,storage,A,F,S,getRole,esc} from "./app.js";
+import {toast} from "./rooms.js";
+renderChrome();
+const INFO='<div class="card" style="padding:4px;margin-top:14px"><a class="mi" href="about.html">About Us</a><a class="mi" href="contact.html">Contact Us</a><a class="mi" href="privacy.html">Privacy Policy</a><a class="mi" href="terms.html">Terms &amp; Conditions</a></div>';
+A.onAuthStateChanged(auth,async u=>{
+ if(!u){root.innerHTML='<div class="card box" style="text-align:center"><h2 style="margin-top:0">Welcome to RoomSetu</h2><p class="muted">Login karke apni profile, chats aur saved rooms dekhein.</p><div class="row"><a class="krf-btn fill" href="login.html">Login</a><a class="krf-btn" href="register.html">Register</a></div></div>'+INFO;return}
+ const role=await getRole(u);let d={};try{d=(await F.getDoc(F.doc(db,"users",u.uid))).data()||{}}catch{}
+ const name=d.name||u.displayName||"",RL={admin:"Admin",owner:"Property Owner",customer:"Student / Tenant"}[role];
+ const links=role==="admin"?[["admin.html","Admin Panel"],["chat.html","Chats"],["rooms.html","Find Rooms"]]
+  :role==="owner"?[["owner-dashboard.html","Owner Dashboard"],["join.html","List Your Property"],["chat.html","Chats"],["rooms.html","Find Rooms"]]
+  :[["customer-dashboard.html","My Enquiries"],["rooms.html?saved=1","Saved Rooms"],["chat.html","Chats"],["rooms.html","Find Rooms"]];
+ root.innerHTML=`<div class="card" style="padding:20px;text-align:center"><div class="av" id="av">${d.photoURL?`<img src="${esc(d.photoURL)}" alt="">`:esc((name||"?")[0].toUpperCase())}</div>
+ <label class="krf-btn" style="margin-top:12px;cursor:pointer;min-height:38px">Photo badlein<input id="pi" type="file" hidden accept="image/jpeg,image/png,image/webp"></label>
+ <h2 style="margin:10px 0 0">${esc(name)}</h2><div class="muted">${RL}</div></div>
+ <form id="pf" class="card box f" style="margin:14px 0;max-width:none"><label>Name<input name="name" value="${esc(name)}" required></label><label>Mobile<input name="phone" type="tel" inputmode="numeric" maxlength="10" value="${esc(d.phone||"")}"></label><label>Email<input value="${esc(u.email||"")}" disabled></label><div class="err" id="pe"></div><button class="krf-btn fill">Save details</button></form>
+ <div class="card" style="padding:4px">${links.map(([h,t])=>`<a class="mi" href="${h}">${t}</a>`).join("")}</div>${INFO}<button class="krf-btn" id="lo" style="width:100%;margin-top:14px">Logout</button>`;
+ pi.onchange=async()=>{const f=pi.files[0];if(!f)return;if(!["image/jpeg","image/png","image/webp"].includes(f.type)||f.size>=2*1024*1024)return toast("JPG/PNG/WebP, 2 MB se chhoti photo chunein");
+  try{toast("Upload ho rahi hai…");const r=S.ref(storage,`profiles/${u.uid}/avatar_${Date.now()}`);await S.uploadBytes(r,f,{contentType:f.type});const url=await S.getDownloadURL(r);
+   await F.updateDoc(F.doc(db,"users",u.uid),{photoURL:url});av.innerHTML=`<img src="${esc(url)}" alt="">`;toast("Photo save ho gayi")}catch(e){console.error(e);toast("Photo upload nahi hui")}};
+ pf.onsubmit=async e=>{e.preventDefault();pe.textContent="";const n=pf.name.value.trim(),p=pf.phone.value.trim();
+  if(n.length<2)return pe.textContent="Naam likhein.";if(p&&!/^[6-9]\d{9}$/.test(p))return pe.textContent="Sahi 10 digit number likhein.";
+  try{await F.updateDoc(F.doc(db,"users",u.uid),{name:n,phone:p});await A.updateProfile(u,{displayName:n});toast("Details save ho gayi")}catch(x){console.error(x);pe.textContent="Save nahi hua."}};
+ lo.onclick=async()=>{await A.signOut(auth);location.href="index.html"}});
+</script></body></html>
