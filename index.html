@@ -4,36 +4,44 @@
 .sb input{width:100%;min-height:50px;border:1.5px solid #0f766e;border-radius:999px;padding:0 20px;font-size:16px;background:#fff}
 .post{margin-bottom:18px}.post .top{display:flex;justify-content:space-between;padding:12px 14px}.imgs{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}.imgs img,.imgs .ph{flex:none;width:100%;height:300px;object-fit:cover;scroll-snap-align:center;background:#e5ece9}
 .act{display:flex;gap:8px;padding:10px 12px 0}.ic{border:0;background:#f1f5f4;border-radius:999px;min-height:40px;padding:0 14px;font-weight:700;font-size:14px;cursor:pointer}.post .b{padding:8px 14px 14px}.post h3{margin:0}
-select.chip{font-family:inherit;font-size:14px}.chip.on{background:#0f766e;color:#fff;border-color:#0f766e}.center{text-align:center;padding:14px}</style></head><body>
-<div class="feed"><div class="sb"><input id="loc" type="search" placeholder="Location likhein (jaise Talwandi, Allen ke paas)" enterkeyhint="search" autocomplete="off"></div>
+select.chip{font-family:inherit;font-size:14px}.chip.on{background:#0f766e;color:#fff;border-color:#0f766e}.center{text-align:center;padding:14px}.sug{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #e7e1d3;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden;z-index:60}.sug[hidden]{display:none}.sug button{display:block;width:100%;text-align:left;padding:13px 18px;border:0;border-bottom:1px solid #f0ebe0;background:#fff;font-size:16px;cursor:pointer}</style></head><body>
+<div class="feed"><div class="sb"><input id="loc" type="search" placeholder="Location likhein (jaise Keshavpura, Talwandi)" enterkeyhint="search" autocomplete="off"><div id="sug" class="sug" hidden></div></div>
 <div class="chips" id="chips" style="margin:6px 0 12px"></div><div id="feed"><div class="skel"></div></div><div id="end" class="muted center"></div>
 </div>
 <script type="module">
 import {renderChrome,esc} from "./app.js";
-import {authReady,fetchApproved,inr,bindFav,isFav,toast,TYPES} from "./rooms.js";
+import {authReady,fetchApproved,inr,bindFav,isFav,toast,TYPES,AREAS} from "./rooms.js";
 renderChrome();let ALL=[],list=[],n=0,user=null,type="";const STEP=5,norm=s=>String(s||"").toLowerCase();
 const CH=[["","All"],["Single Room","Single"],["Double Sharing","Double"]],rest=TYPES.filter(t=>!CH.some(c=>c[0]===t));
 chips.innerHTML=CH.map(([v,t])=>`<button class="chip${v===""?" on":""}" data-t="${esc(v)}">${t}</button>`).join("")+`<select class="chip" id="mt"><option value="">More ▾</option>${rest.map(t=>`<option>${esc(t)}</option>`).join("")}</select>`;
 const setType=v=>{type=v;chips.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.t===v));if(!rest.includes(v))mt.value="";load()};
 chips.onclick=e=>{const b=e.target.closest("button");if(b)setType(b.dataset.t)};mt.onchange=()=>mt.value&&setType(mt.value);
-const post=l=>{const ph=(l.photos||[]).filter(Boolean);return `<article class="card post"><div class="top"><b>📍 ${esc(l.area||"Kota")}</b><span class="muted">${esc(l.propertyType||"")}</span></div>
+const post=l=>{const ph=(l.photos||[]).filter(Boolean);return `<article class="card post"><div class="top"><b>📍 ${esc(l.area&&l.area!=="Other"?l.area:(l.landmark||"Kota"))}</b><span class="muted">${esc(l.propertyType||"")}</span></div>
 <div class="imgs">${ph.length?ph.map(p=>`<img loading="lazy" src="${esc(p)}" alt="${esc(l.title)}">`).join(""):'<div class="ph"></div>'}</div>
 <div class="act"><button class="ic" data-fav="${esc(l.id)}">${isFav(l.id)?"♥ Saved":"♡ Save"}</button><button class="ic" data-share="${esc(l.id)}">↗ Share</button></div>
 <div class="b"><h3>${esc(l.title)}</h3><div class="rent">${inr(l.monthlyRent)}<span class="muted">/month</span></div><div class="muted">${esc([l.landmark,l.area].filter(Boolean).join(", "))}</div>
 <div class="row"><a class="krf-btn fill" href="chat.html?listing=${encodeURIComponent(l.id)}">💬 Chat</a><a class="krf-btn" href="room-details.html?id=${encodeURIComponent(l.id)}">Detail</a></div></div></article>`};
-function order(){const q=norm(loc.value).split(/\s+/).filter(Boolean);
- const m=l=>{if(!q.length)return 0;const h=norm([l.area,l.landmark,l.title,l.city].join(" "));return q.every(t=>h.includes(t))?0:1};
- const pin=l=>typeof l.featuredRank==="number"?l.featuredRank:1e9,t=l=>l.createdAt?.seconds||0;
- list=[...ALL].sort((a,b)=>m(a)-m(b)||pin(a)-pin(b)||t(b)-t(a));n=0;feed.innerHTML="";more()}
-function more(){const s=list.slice(n,n+STEP);feed.insertAdjacentHTML("beforeend",s.map(post).join(""));n+=s.length;
+const cp=x=>norm(x).replace(/[^a-z0-9]/g,"");let nm=0,qa=false;
+const isM=l=>{const raw=norm(loc.value).trim();if(!raw)return true;const h=norm([l.area,l.landmark,l.title,l.city,l.description].join(" "));return cp(h).includes(cp(raw))||raw.split(/\s+/).every(t=>h.includes(t))};
+function order(){qa=!!norm(loc.value).trim();const pin=l=>typeof l.featuredRank==="number"?l.featuredRank:1e9,t=l=>l.createdAt?.seconds||0;
+ list=[...ALL].sort((a,b)=>(+isM(b))-(+isM(a))||pin(a)-pin(b)||t(b)-t(a));nm=qa?list.filter(isM).length:0;n=0;feed.innerHTML="";
+ if(qa&&!nm&&list.length)feed.innerHTML=`<div class="empty"><b>"${esc(loc.value.trim())}" mein abhi koi room nahi</b>Neeche dusri jagah ke rooms dekhein.</div>`;more()}
+function more(){const s=list.slice(n,n+STEP);let h="";s.forEach((l,i)=>{if(qa&&nm&&n+i===nm)h+='<div class="muted center">— Aas-paas ke aur rooms —</div>';h+=post(l)});feed.insertAdjacentHTML("beforeend",h);n+=s.length;
  end.textContent=!list.length?"":n>=list.length?"Aur listings nahi hain":"Scroll karein…";
  if(!list.length)feed.innerHTML='<div class="empty"><b>Koi room nahi mila</b>Dusri location try karein ya "All" chunein.</div>'}
+const KNOWN=[...AREAS,"Keshavpura","Rangbari","Gumanpura","Borkhera","Aerodrome Circle","Nayapura","Ballabhbari","Chhawani"];
+function sugg(){const v=norm(loc.value).trim();if(!v){sug.hidden=true;return}
+ const set=new Set([...ALL.flatMap(l=>[l.area,l.landmark]).filter(x=>x&&x!=="Other"),...KNOWN]);
+ const r=[...set].filter(x=>cp(x).includes(cp(v))&&cp(x)!==cp(v)).slice(0,6);sug.innerHTML=r.map(x=>`<button type="button" data-s="${esc(x)}">📍 ${esc(x)}</button>`).join("");sug.hidden=!r.length}
+sug.onpointerdown=e=>{const b=e.target.closest("[data-s]");if(!b)return;e.preventDefault();loc.value=b.dataset.s;sug.hidden=true;loc.blur();order()};
+loc.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();sug.hidden=true;loc.blur();order()}};loc.onblur=()=>setTimeout(()=>sug.hidden=true,150);
 async function load(){feed.innerHTML='<div class="skel"></div>';try{ALL=await fetchApproved({propertyType:type,max:100});order()}catch(e){console.error(e);feed.innerHTML='<div class="empty"><b>Listings load nahi hui</b>Refresh karein.</div>'}}
 new IntersectionObserver(es=>{if(es[0].isIntersecting&&n<list.length)more()},{rootMargin:"300px"}).observe(end);
-let tm;loc.oninput=()=>{clearTimeout(tm);tm=setTimeout(order,250)};
+let tm;loc.oninput=()=>{clearTimeout(tm);tm=setTimeout(()=>{order();sugg()},200)};
 bindFav(feed);const base=feed.onclick;
 feed.onclick=e=>{base(e);const s=e.target.closest("[data-share]");
  if(s){const l=ALL.find(x=>x.id===s.dataset.share),u=new URL("room-details.html?id="+encodeURIComponent(l.id),location.href).href;
   navigator.share?navigator.share({title:l.title,url:u}).catch(()=>{}):navigator.clipboard.writeText(u).then(()=>toast("Link copy ho gaya"))}};
+if(new URLSearchParams(location.search).get("search"))setTimeout(()=>loc.focus(),400);
 authReady().then(u=>{user=u;load()});
 </script></body></html>
