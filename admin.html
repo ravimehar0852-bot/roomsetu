@@ -1,28 +1,29 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Admin – Kota Room Finder</title><link rel="stylesheet" href="./krf.css"></head><body>
-<main class="wrap"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:8px 0">Admin Panel</h2><button class="krf-btn" id="rf">↻ Refresh</button></div>
-<div class="err" id="err"></div><div class="stats" id="st"></div>
-<div class="form card" style="padding:12px;margin-bottom:14px"><select id="fs"><option value="">All status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select><input id="q" placeholder="Search title, area, owner…"></div>
-<div id="ls"><div class="skel"></div></div></main>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Profile – RoomSetu</title><link rel="stylesheet" href="./krf.css">
+<style>.av{width:96px;height:96px;border-radius:50%;margin:0 auto;background:#0f766e;color:#fff;display:grid;place-items:center;font-size:40px;font-weight:800;overflow:hidden}.av img{width:100%;height:100%;object-fit:cover}
+.mi{display:flex;justify-content:space-between;padding:15px 14px;text-decoration:none;font-weight:600;border-bottom:1px solid #f0ebe0}.mi:last-child{border:0}.mi:after{content:"›";color:#9ca3af}</style></head><body>
+<main class="wrap" style="max-width:520px" id="root"><div class="skel"></div></main>
 <script type="module">
-import {renderChrome,auth,db,A,F,getRole,esc} from "./app.js";
-import {inr,toast} from "./rooms.js";
-renderChrome();let L=[];const d=x=>x&&x.toDate?x.toDate().toLocaleString("en-IN"):"—";
-A.onAuthStateChanged(auth,async u=>{if(!u)return location.replace("login.html?next=admin.html");
- if(await getRole(u)!=="admin"){ls.innerHTML='<div class="empty"><b>Access denied</b>Ye page sirf administrator ke liye hai.</div>';return}load()});
-async function load(){err.textContent="";ls.innerHTML='<div class="skel"></div>';
- try{L=(await F.getDocs(F.collection(db,"listings"))).docs.map(x=>({id:x.id,...x.data()}));L.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));draw()}
- catch(e){console.error(e);ls.innerHTML="";err.textContent="Listings load nahi hui ["+(e.code||e.message)+"]. "+(e.code==="permission-denied"?"Rules ya admin role check karein.":"Is code ka screenshot bhejein.")}}
-function draw(){const c=k=>L.filter(x=>x.status===k).length,s=fs.value,t=q.value.trim().toLowerCase();
- st.innerHTML=[["Total",L.length],["Pending",c("pending")],["Approved",c("approved")],["Rejected",c("rejected")]].map(([a,b])=>`<div><b>${b}</b>${a}</div>`).join("");
- const R=L.filter(x=>(!s||x.status===s)&&(!t||[x.title,x.area,x.ownerName,x.ownerEmail].join(" ").toLowerCase().includes(t)));
- ls.innerHTML=R.length?R.map(l=>`<div class="card item">${l.photos&&l.photos[0]?`<a href="${esc(l.photos[0])}" target="_blank" rel="noopener"><img src="${esc(l.photos[0])}" alt=""></a>`:'<div class="ph"></div>'}<div class="info"><b>${esc(l.title)}</b> <span class="st ${esc(l.status)}">${esc(l.status)}</span>
- <div class="muted">${esc(l.propertyType||"")} • ${esc(l.area||"")} • ${inr(l.monthlyRent)}/mo • Deposit ${inr(l.securityDeposit)}</div>
- <div class="muted">Owner: ${esc(l.ownerName||"—")} • ${esc(l.ownerEmail||"")} • ${esc(l.ownerPhone||"")}</div>
- <div class="muted">Submitted ${d(l.createdAt)} • Reviewed ${d(l.reviewedAt)} • ${(l.photos||[]).length} photo(s)</div>
- <details><summary class="muted">Details</summary><p style="white-space:pre-wrap">${esc(l.description||"")}</p><div class="muted">Facilities: ${esc((l.facilities||[]).join(", ")||"—")}<br>Landmark: ${esc(l.landmark||"—")} • For: ${esc(l.suitableForLabel||"")} • ${esc(l.furnishingLabel||"")}</div></details>
- <div class="acts">${l.status!=="approved"?`<button class="krf-btn fill" data-a="${l.id}" data-v="approved">${l.status==="rejected"?"Re-approve":"Approve"}</button>`:""}${l.status!=="rejected"?`<button class="krf-btn" data-a="${l.id}" data-v="rejected">Reject</button>`:""}</div></div></div>`).join(""):'<div class="empty"><b>Koi listing nahi mili</b></div>'}
-fs.onchange=q.oninput=draw;rf.onclick=load;
-ls.onclick=async e=>{const b=e.target.closest("[data-a]");if(!b)return;b.disabled=true;
- try{await F.updateDoc(F.doc(db,"listings",b.dataset.a),{status:b.dataset.v,reviewedAt:F.serverTimestamp()});toast(b.dataset.v==="approved"?"Approved":"Rejected");load()}
- catch(x){console.error(x);toast("Update fail hua. Rules/role check karein.");b.disabled=false}};
+import {renderChrome,auth,db,storage,A,F,S,getRole,esc} from "./app.js";
+import {toast} from "./rooms.js";
+renderChrome();
+const INFO='<div class="card" style="padding:4px;margin-top:14px"><a class="mi" href="about.html">About Us</a><a class="mi" href="contact.html">Contact Us</a><a class="mi" href="privacy.html">Privacy Policy</a><a class="mi" href="terms.html">Terms &amp; Conditions</a></div>';
+A.onAuthStateChanged(auth,async u=>{
+ if(!u){root.innerHTML='<div class="card box" style="text-align:center"><h2 style="margin-top:0">Welcome to RoomSetu</h2><p class="muted">Login karke apni profile, chats aur saved rooms dekhein.</p><div class="row"><a class="krf-btn fill" href="login.html">Login</a><a class="krf-btn" href="register.html">Register</a></div></div>'+INFO;return}
+ const role=await getRole(u);let d={};try{d=(await F.getDoc(F.doc(db,"users",u.uid))).data()||{}}catch{}
+ const name=d.name||u.displayName||"",RL={admin:"Admin",owner:"Property Owner",customer:"Student / Tenant"}[role];
+ const links=role==="admin"?[["admin.html","Admin Panel"],["chat.html","Chats"],["rooms.html","Find Rooms"]]
+  :role==="owner"?[["owner-dashboard.html","Owner Dashboard"],["join.html","List Your Property"],["chat.html","Chats"],["rooms.html","Find Rooms"]]
+  :[["customer-dashboard.html","My Enquiries"],["rooms.html?saved=1","Saved Rooms"],["chat.html","Chats"],["rooms.html","Find Rooms"]];
+ root.innerHTML=`<div class="card" style="padding:20px;text-align:center"><div class="av" id="av">${d.photoURL?`<img src="${esc(d.photoURL)}" alt="">`:esc((name||"?")[0].toUpperCase())}</div>
+ <label class="krf-btn" style="margin-top:12px;cursor:pointer;min-height:38px">Photo badlein<input id="pi" type="file" hidden accept="image/jpeg,image/png,image/webp"></label>
+ <h2 style="margin:10px 0 0">${esc(name)}</h2><div class="muted">${RL}</div></div>
+ <form id="pf" class="card box f" style="margin:14px 0;max-width:none"><label>Name<input name="name" value="${esc(name)}" required></label><label>Mobile<input name="phone" type="tel" inputmode="numeric" maxlength="10" value="${esc(d.phone||"")}"></label><label>Email<input value="${esc(u.email||"")}" disabled></label><div class="err" id="pe"></div><button class="krf-btn fill">Save details</button></form>
+ <div class="card" style="padding:4px">${links.map(([h,t])=>`<a class="mi" href="${h}">${t}</a>`).join("")}</div>${INFO}<button class="krf-btn" id="lo" style="width:100%;margin-top:14px">Logout</button>`;
+ pi.onchange=async()=>{const f=pi.files[0];if(!f)return;if(!["image/jpeg","image/png","image/webp"].includes(f.type)||f.size>=2*1024*1024)return toast("JPG/PNG/WebP, 2 MB se chhoti photo chunein");
+  try{toast("Upload ho rahi hai…");const r=S.ref(storage,`profiles/${u.uid}/avatar_${Date.now()}`);await S.uploadBytes(r,f,{contentType:f.type});const url=await S.getDownloadURL(r);
+   await F.updateDoc(F.doc(db,"users",u.uid),{photoURL:url});av.innerHTML=`<img src="${esc(url)}" alt="">`;toast("Photo save ho gayi")}catch(e){console.error(e);toast("Photo upload nahi hui")}};
+ pf.onsubmit=async e=>{e.preventDefault();pe.textContent="";const n=pf.name.value.trim(),p=pf.phone.value.trim();
+  if(n.length<2)return pe.textContent="Naam likhein.";if(p&&!/^[6-9]\d{9}$/.test(p))return pe.textContent="Sahi 10 digit number likhein.";
+  try{await F.updateDoc(F.doc(db,"users",u.uid),{name:n,phone:p});await A.updateProfile(u,{displayName:n});toast("Details save ho gayi")}catch(x){console.error(x);pe.textContent="Save nahi hua."}};
+ lo.onclick=async()=>{await A.signOut(auth);location.href="index.html"}});
 </script></body></html>
