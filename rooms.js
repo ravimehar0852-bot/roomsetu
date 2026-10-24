@@ -8,7 +8,7 @@ import {
   db,
   A,
   F,
-  esc
+  escapeHTML as esc
 } from "./app.js";
 
 
