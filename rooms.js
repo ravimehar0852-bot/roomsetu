@@ -2,13 +2,7 @@
 // KOTA ROOM FINDER - ROOMS MODULE
 // Firebase listings, search, favorites and property cards
 // ============================================================
-import {
-  auth,
-  db,
-  A,
-  F,
-  escapeHTML as esc
-} from "./app.js";
+import { auth, db, A, F, esc } from "./app.js";
 
 
 // ============================================================
