@@ -29,3 +29,4 @@ export async function fetchApproved(f={}){
  return r}
 export function authReady(){return new Promise(res=>{const u=A.onAuthStateChanged(auth,async x=>{u();uid=x?x.uid:null;await loadFavs();res(x)})})}
 export function show(el,list,emptyMsg){el.innerHTML=list.length?list.map(card).join(""):`<div class="empty" style="grid-column:1/-1"><b>Koi room nahi mila</b>${emptyMsg||"Filters change karke dobara try karein."}</div>`;bindFav(el)}
+export const isFav = (id) => favs.has(id);
