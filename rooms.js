@@ -2,8 +2,8 @@
 // KOTA ROOM FINDER - ROOMS MODULE
 // Firebase listings, search, favorites and property cards
 // ============================================================
-import { auth, db, A, F, esc } from "./app.js";
 
+import { auth, db, A, F, esc } from "./app.js";
 
 // ============================================================
 // CONSTANTS
@@ -35,12 +35,12 @@ export const TYPES = [
   "Family Rental"
 ];
 
-
 // ============================================================
 // HELPERS
 // ============================================================
 
-const money = value => {
+// Exported so index.html and admin.html can use it.
+export const inr = value => {
   const n = Number(value);
 
   if (!Number.isFinite(n)) {
@@ -52,9 +52,6 @@ const money = value => {
 
 const norm = value =>
   String(value ?? "").trim().toLowerCase();
-
-const currentPageUser = () => auth.currentUser;
-
 
 // ============================================================
 // TOAST MESSAGE
@@ -80,7 +77,6 @@ export function toast(message, type = "info") {
   }
 
   const item = document.createElement("div");
-
   item.textContent = message;
 
   Object.assign(item.style, {
@@ -104,10 +100,8 @@ export function toast(message, type = "info") {
   setTimeout(() => item.remove(), 3500);
 }
 
-
 // ============================================================
 // AUTH READY
-// Wait for Firebase to determine the logged-in user.
 // ============================================================
 
 let authPromise = null;
@@ -141,13 +135,11 @@ export function authReady() {
   return authPromise;
 }
 
-
 // ============================================================
 // FAVORITES CACHE
 // ============================================================
 
 const favoriteIds = new Set();
-
 let favoritesLoadedFor = null;
 
 async function loadFavorites(user) {
@@ -173,7 +165,6 @@ async function loadFavorites(user) {
         favoriteIds.add(String(data.listingId));
       }
     });
-
   } catch (error) {
     console.warn("Favorites load error:", error);
   }
@@ -183,13 +174,8 @@ export function isFav(listingId) {
   return favoriteIds.has(String(listingId));
 }
 
-
 // ============================================================
 // FETCH PUBLIC LISTINGS
-//
-// Firestore rules require approved + available listings.
-// Additional filters are applied after authorized documents
-// have been fetched.
 // ============================================================
 
 export async function fetchApproved(options = {}) {
@@ -228,34 +214,25 @@ export async function fetchApproved(options = {}) {
     ...document.data()
   }));
 
-  // Locality filter
   if (area) {
     listings = listings.filter(item =>
       norm(item.area) === norm(area)
     );
   }
 
-  // Property type filter
   if (propertyType) {
     listings = listings.filter(item =>
       norm(item.propertyType) === norm(propertyType)
     );
   }
 
-  // Suitable tenant filter
   if (suitableFor) {
-    listings = listings.filter(item => {
-      const value = norm(item.suitableFor);
-      const label = norm(item.suitableForLabel);
-
-      return (
-        value === norm(suitableFor) ||
-        label === norm(suitableFor)
-      );
-    });
+    listings = listings.filter(item =>
+      norm(item.suitableFor) === norm(suitableFor) ||
+      norm(item.suitableForLabel) === norm(suitableFor)
+    );
   }
 
-  // Furnishing filter
   if (furnishing) {
     listings = listings.filter(item =>
       norm(item.furnishing) === norm(furnishing) ||
@@ -263,7 +240,6 @@ export async function fetchApproved(options = {}) {
     );
   }
 
-  // Rent filters
   if (Number(min) > 0) {
     listings = listings.filter(item =>
       Number(item.monthlyRent) >= Number(min)
@@ -276,7 +252,6 @@ export async function fetchApproved(options = {}) {
     );
   }
 
-  // Sorting
   if (sort === "low") {
     listings.sort(
       (a, b) =>
@@ -293,14 +268,12 @@ export async function fetchApproved(options = {}) {
     listings.sort((a, b) => {
       const aTime = a.createdAt?.seconds || 0;
       const bTime = b.createdAt?.seconds || 0;
-
       return bTime - aTime;
     });
   }
 
   return listings;
 }
-
 
 // ============================================================
 // PROPERTY CARD
@@ -309,6 +282,7 @@ export async function fetchApproved(options = {}) {
 export function card(listing) {
   const item = listing || {};
   const id = String(item.id || "");
+
   const photos = Array.isArray(item.photos)
     ? item.photos.filter(Boolean)
     : [];
@@ -316,9 +290,7 @@ export function card(listing) {
   const image = photos[0] || "";
 
   return `
-    <article class="card room-card"
-      style="overflow:hidden">
-
+    <article class="card room-card" style="overflow:hidden">
       ${
         image
           ? `
@@ -334,17 +306,16 @@ export function card(listing) {
           : `
             <div
               style="height:180px;background:#e8f0ed;
-              display:grid;place-items:center;font-size:48px">
-              🏠
-            </div>
+              display:grid;place-items:center;font-size:48px"
+            >🏠</div>
           `
       }
 
       <div style="padding:14px">
-
-        <div class="row"
-          style="justify-content:space-between;align-items:center">
-
+        <div
+          class="row"
+          style="justify-content:space-between;align-items:center"
+        >
           <span class="tag">
             ${esc(item.propertyType || "Room")}
           </span>
@@ -357,7 +328,6 @@ export function card(listing) {
           >
             ${isFav(id) ? "♥ Saved" : "♡ Save"}
           </button>
-
         </div>
 
         <h3 style="margin:12px 0 6px">
@@ -365,7 +335,7 @@ export function card(listing) {
         </h3>
 
         <div class="rent">
-          ${money(item.monthlyRent)}
+          ${inr(item.monthlyRent)}
           <span class="muted">/month</span>
         </div>
 
@@ -379,9 +349,11 @@ export function card(listing) {
 
         <p class="muted">
           ${esc(item.suitableForLabel || item.suitableFor || "")}
-          ${item.furnishing
-            ? " · " + esc(item.furnishingLabel || item.furnishing)
-            : ""}
+          ${
+            item.furnishing
+              ? " · " + esc(item.furnishingLabel || item.furnishing)
+              : ""
+          }
         </p>
 
         <a
@@ -391,12 +363,10 @@ export function card(listing) {
         >
           View Details
         </a>
-
       </div>
     </article>
   `;
 }
-
 
 // ============================================================
 // RENDER PROPERTY CARDS
@@ -410,33 +380,27 @@ export function show(container, listings, emptyMessage) {
 
   if (!Array.isArray(listings) || listings.length === 0) {
     container.innerHTML = `
-      <div class="empty"
-        style="grid-column:1/-1;text-align:center;padding:28px">
-
+      <div
+        class="empty"
+        style="grid-column:1/-1;text-align:center;padding:28px"
+      >
         <div style="font-size:38px">🏠</div>
-
         <b>Koi room nahi mila</b>
-
         <p class="muted">
           ${esc(
             emptyMessage ||
             "Filters change karke dobara try karein."
           )}
         </p>
-
       </div>
     `;
 
     return;
   }
 
-  container.innerHTML = listings
-    .map(card)
-    .join("");
-
+  container.innerHTML = listings.map(card).join("");
   bindFav(container);
 }
-
 
 // ============================================================
 // SAVE / REMOVE FAVORITE
@@ -470,8 +434,9 @@ export function bindFav(container) {
     if (!user) {
       location.href =
         "./login.html?next=" +
-        encodeURIComponent(location.pathname.split("/").pop() || "index.html");
-
+        encodeURIComponent(
+          location.pathname.split("/").pop() || "index.html"
+        );
       return;
     }
 
@@ -487,9 +452,7 @@ export function bindFav(container) {
         await F.deleteDoc(ref);
         favoriteIds.delete(listingId);
         button.textContent = "♡ Save";
-
         toast("Saved rooms se hata diya.", "success");
-
       } else {
         await F.setDoc(ref, {
           uid: user.uid,
@@ -499,10 +462,8 @@ export function bindFav(container) {
 
         favoriteIds.add(listingId);
         button.textContent = "♥ Saved";
-
         toast("Room save ho gaya!", "success");
       }
-
     } catch (error) {
       console.error("Favorite error:", error);
 
@@ -510,16 +471,14 @@ export function bindFav(container) {
         "Room save nahi ho paya. Firebase Rules check karein.",
         "error"
       );
-
     } finally {
       button.disabled = false;
     }
   });
 }
 
-
 // ============================================================
 // TYPES / AREAS READY
 // ============================================================
 
-export const ROOMS_MODULE_VERSION = "1.0.0";
+export const ROOMS_MODULE_VERSION = "1.0.1";
